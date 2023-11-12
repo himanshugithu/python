@@ -5,10 +5,10 @@ import webbrowser
 import os
 
 engine = pyttsx3.init('sapi5')
-voice = engine.getProperty('voices')
-engine.setProperty('voice', voice[1].id)
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
 
-
+wake_up_keyword = "jupiter"  # Adjust the wake-up keyword as needed
 
 def speak(audio):
     engine.say(audio)
@@ -16,47 +16,64 @@ def speak(audio):
 
 def wishme():
     hour = int(datetime.datetime.now().hour)
-    if hour>=0 and hour<12:
-        speak("good morning")
-    elif hour>12 and hour<18:
-        speak("good afternoon")
+    if 0 <= hour < 12:
+        speak("Good morning")
+    elif 12 <= hour < 18:
+        speak("Good afternoon")
     else:
-        speak("GOOD EVENING")
+        speak("Good evening")
     
-    speak("hello himanshu how can i help you")
+    speak("Hello Himanshu, how can I help you")
 
 def takecommand():
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("listening....")
-        r.pause_threshold = 1
-        audio = r.listen(source)
 
-    try:
-        print("recognizing......")
-        querry = r.recognize_google(audio, language='en-in')
-        print(f"user said,{querry}\n")
+    # Listen for the wake-up keyword
+    while True:
+        with sr.Microphone() as source:
+            print("Listening for wake-up keyword....")
+            r.adjust_for_ambient_noise(source, duration=1)  # Adjust for ambient noise
+            audio = r.listen(source)
 
-    except Exception as e:
-        print(e)
-        print("say again")
-        return "none"
-    return querry
+        try:
+            print("Recognizing......")
+            keyword = r.recognize_google(audio, language='en-in').lower()
+            if wake_up_keyword in keyword:
+                speak("I'm listening. How can I assist you?")
+                break
+        except sr.UnknownValueError:
+            pass
 
-if __name__=="__main__":
+    # Listen for the user command
+    while True:
+        with sr.Microphone() as source:
+            print("Listening for user command....")
+            r.pause_threshold = 1
+            audio = r.listen(source)
+
+        try:
+            print("Recognizing......")
+            query = r.recognize_google(audio, language='en-in').lower()
+            print(f"User said, {query}\n")
+            return query
+        except Exception as e:
+            print(e)
+            print("Say that again")
+
+if __name__ == "__main__":
     wishme()
-    while  1:
-        querry = takecommand().lower()
-        if 'open youtube' in querry:
+    while True:
+        query = takecommand()
+        if 'open youtube' in query:
             webbrowser.open("youtube.com")
 
-        elif 'open google' in querry:
+        elif 'open google' in query:
             webbrowser.open('www.google.com')
 
-        elif 'time' in querry:
+        elif 'time' in query:
             strtime = datetime.datetime.now().strftime("%H:%M:%S") 
-            speak(f"time is {strtime}")  
-            print(strtime) 
+            speak(f"Time is {strtime}")
+            print(strtime)
 
-        elif 'open notepad' in querry:
+        elif 'open notepad' in query:
             os.startfile(r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Accessories\Notepad")
